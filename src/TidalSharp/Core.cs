@@ -105,7 +105,12 @@ public class TidalClient
                 ActiveUser = user;
                 API.UpdateUser(user);
 
-                await user.GetSession(API, token);
+                // Session-info refresh is best-effort. A transient failure here
+                // (e.g. the /sessions call) must NOT discard an otherwise valid
+                // restored user — doing so made Login() return false and
+                // GetRequestGenerator() return null, NRE-ing Lidarr core.
+                try { await user.GetSession(API, token); }
+                catch { /* keep restored tokens; token refresh handles the rest */ }
 
                 return true;
             }

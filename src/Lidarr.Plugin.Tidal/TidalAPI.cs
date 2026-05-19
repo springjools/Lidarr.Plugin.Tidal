@@ -33,7 +33,12 @@ namespace NzbDrone.Plugin.Tidal
         {
             parameters ??= new();
             parameters["sessionId"] = _client.ActiveUser?.SessionID ?? "";
-            parameters["countryCode"] = _client.ActiveUser?.CountryCode ?? "";
+            // Mirror upstream PR #54's fallback (which only covered TidalSharp/API.cs):
+            // when session info hasn't populated CountryCode yet, an empty
+            // countryCode makes Tidal reject the request. Default to US.
+            var countryCode = _client.ActiveUser?.CountryCode ?? "";
+            if (string.IsNullOrEmpty(countryCode)) countryCode = "US";
+            parameters["countryCode"] = countryCode;
             if (!parameters.ContainsKey("limit"))
                 parameters["limit"] = "1000";
 
